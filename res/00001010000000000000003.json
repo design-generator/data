@@ -1,1 +1,1 @@
-{"unmet_heating_hours": 251.0, "unmet_cooling_hours": 164.17, "eui": 427.3, "lighting_power_density": 10.7639, "cooling": 126.7, "heating": 185.62}
+{"unmet_heating_hours": 251.0, "unmet_cooling_hours": 164.17, "eui": 427.3, "lighting_power_density": 10.7639, "cooling": 126.7, "daylight_factor": 0.25794392523364484, "heating": 185.62}
