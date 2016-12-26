@@ -3,7 +3,13 @@ import os
 import pandas as pd
 import sqlite3
 import json
+import sys
 
+def update_progress(progress):
+    p = int(progress / 5)
+    r = 20 - p
+    sys.stdout.write('\r[{0}{1}] {2:.2f}%'.format('|' * p, '.' * r, progress))
+    sys.stdout.flush()
 
 def sql_query(input_path, input_filename, report_name, table_name, row_name, column_name):
 
@@ -19,19 +25,18 @@ def sql_query(input_path, input_filename, report_name, table_name, row_name, col
     cur = con.cursor()
     val = 0
     sql_ok = 'no'
-    try:
-        cur.execute('pragma integrity_check')
-        data = cur.fetchall()
-        for d in data:
-            sql_ok = d[0] #, d[1], d[2]
-    except:
-        pass
-    else:
-        if sql_ok == 'ok':
-            df = pd.read_sql_query(query, con)
+    cur.execute('pragma integrity_check')
+    data = cur.fetchall()
+    (sql_ok,), = data
+    if sql_ok == 'ok':
+        df = pd.read_sql_query(query, con)
+        try:
             val = float(df.iloc[0]['Value'])
-    finally:
-        con.close()
+        except:
+            pass
+        finally:
+            con.close()
+
     return val
 
 
@@ -40,12 +45,13 @@ input_path = '..\\raw_results'
 output_path='..\\res'
 
 # PROCESS SQL FILES
-input_filenames = (f for f in os.listdir(input_path) if f.endswith(".sql"))
+input_filenames = tuple(f for f in os.listdir(input_path) if f.endswith(".sql"))
+numOfFiles = len(input_filenames)
 
 min_eui = 0.0
 max_eui = 0.0
 
-for input_filename in input_filenames:
+for count, input_filename in enumerate(input_filenames):
 
     eui = sql_query(input_path, input_filename,
                     'AnnualBuildingUtilityPerformanceSummary',
@@ -112,8 +118,14 @@ for input_filename in input_filenames:
         #'sensible heat gain summary'
     }
 
+    update_progress(count * 100 / numOfFiles)
+    if sum(case_dict.values()) == dlf:
+        # sql file is corrupted move on to the next
+        continue
+
     with open(os.path.join(output_path, input_filename[:-4] + '.json'), 'w') as outfile:
         json.dump(case_dict, outfile)
+
 
     # print('')
     # print('EUI: ' + str(eui)
